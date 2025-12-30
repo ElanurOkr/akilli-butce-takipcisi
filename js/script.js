@@ -664,7 +664,7 @@ class BudgetTracker {
             });
         }
 
-        // If modal closed without register, show gate again
+        // Modal giriş yapılmadan kapatılırsa, kapıyı tekrar göster
         modal.addEventListener('click', (e) => {
             if (e.target === modal && !this.currentUser) {
                 if (gate) gate.classList.remove('hidden');
