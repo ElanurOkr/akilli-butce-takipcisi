@@ -191,20 +191,10 @@ class BudgetTracker {
                 moreMenu.classList.toggle('hidden');
             });
             document.addEventListener('click', (e) => {
-                if (!moreMenu.contains(e.target)) {
+                if (!moreMenu.contains(e.target) && !moreMenuBtn.contains(e.target)) {
                     moreMenu.classList.add('hidden');
                 }
             });
-            const mm = (id, fn) => {
-                const el = document.getElementById(id);
-                if (el) el.addEventListener('click', () => { moreMenu.classList.add('hidden'); fn(); });
-            };
-            mm('mmExport', () => this.exportData());
-            mm('mmImport', () => this.importData());
-            mm('mmExportCsv', () => this.exportCSV());
-            mm('mmImportCsv', () => this.importCSV());
-            mm('mmPrint', () => this.printReport());
-            mm('mmSettings', () => this.showSettingsDialog());
         }
 
         // Yetkilendirme butonları
@@ -249,6 +239,12 @@ class BudgetTracker {
                 { sel: '#toRegister', fn: () => this.showRegisterDialog() },
                 { sel: '#toLogin', fn: () => this.showLoginDialog() },
                 { sel: '#forgotPassword', fn: () => this.showResetPasswordDialog() },
+                { sel: '#mmLogin', fn: () => this.showLoginDialog() },
+                { sel: '#mmRegister', fn: () => this.showRegisterDialog() },
+                { sel: '#mmPrint', fn: () => this.printReport() },
+                { sel: '#mmExport', fn: () => this.exportData() },
+                { sel: '#mmImport', fn: () => this.importData() },
+                { sel: '#logoutBtn', fn: () => this.logoutUser() },
             ];
             for (const { sel, fn } of map) {
                 const btn = target.closest(sel);
@@ -257,6 +253,9 @@ class BudgetTracker {
                     // Yeni modal açılmadan önce mevcut modalları kapat
                     const modals = document.querySelectorAll('.fixed.inset-0');
                     modals.forEach(m => { if (m.classList.contains('bg-black')) m.parentNode && m.parentNode.removeChild(m); });
+                    // Mobil menu'yu kapat
+                    const moreMenu = document.getElementById('moreMenu');
+                    if (moreMenu) moreMenu.classList.add('hidden');
                     fn();
                     break;
                 }
@@ -741,6 +740,7 @@ class BudgetTracker {
         if (menu) menu.classList.add('hidden');
         this.saveCurrentUser(null);
         this.showNotification('Çıkış yapıldı', 'info');
+        this.refreshAuthUI(); // UI'yi güncelle
     }
 
     showProfileDialog() {
