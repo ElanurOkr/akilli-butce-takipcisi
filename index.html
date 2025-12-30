@@ -36,10 +36,37 @@
             unicode-bidi: embed;
             font-variant: normal;
         }
+        /* Dark mode button fix */
+        .dark button, .dark .btn {
+            color: #ffffff !important;
+        }
+        .dark button.bg-gray-100, .dark button.bg-gray-200, .dark button.bg-gray-300 {
+            color: #1f2937 !important;
+            background-color: #374151 !important;
+            border-color: #4b5563 !important;
+        }
+        .dark button.bg-gray-100:hover, .dark button.bg-gray-200:hover, .dark button.bg-gray-300:hover {
+            background-color: #4b5563 !important;
+        }
         /* Modal text fix */
         .modal-content, .fixed {
             font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
             unicode-bidi: embed;
+        }
+        /* Dark mode modal fix */
+        .dark .fixed {
+            color: #f3f4f6 !important;
+        }
+        .dark .fixed button {
+            color: #ffffff !important;
+        }
+        .dark .fixed button.bg-gray-100, .dark .fixed button.bg-gray-200, .dark .fixed button.bg-gray-300 {
+            color: #1f2937 !important;
+            background-color: #374151 !important;
+            border-color: #4b5563 !important;
+        }
+        .dark .fixed button.bg-gray-100:hover, .dark .fixed button.bg-gray-200:hover, .dark .fixed button.bg-gray-300:hover {
+            background-color: #4b5563 !important;
         }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
