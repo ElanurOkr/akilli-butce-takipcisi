@@ -367,8 +367,16 @@ class BudgetTracker {
     showLoginDialog() {
         const gate = document.getElementById('authGate');
         if (gate) gate.classList.add('hidden');
+        
+        // Mevcut modal varsa temizle
+        const existingModal = document.querySelector('.fixed.inset-0');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
         const modal = document.createElement('div');
         modal.className = 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center fade-in';
+        modal.style.zIndex = '2000';
         modal.innerHTML = `
             <div class="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
                 <!-- Header -->
@@ -435,87 +443,110 @@ class BudgetTracker {
                 </div>
             </div>
         `;
+        
         document.body.appendChild(modal);
-        modal.style.zIndex = '2000';
+        
+        // Event listener'ları modal eklendikten sonra bağla
+        setTimeout(() => {
+            // Şifre göster/gizle
+            const toggleBtn = document.getElementById('toggleLoginPassword');
+            const passwordInput = document.getElementById('loginPassword');
+            if (toggleBtn && passwordInput) {
+                toggleBtn.addEventListener('click', () => {
+                    const type = passwordInput.type === 'password' ? 'text' : 'password';
+                    passwordInput.type = type;
+                    toggleBtn.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+                });
+            }
 
-        // Şifre göster/gizle
-        const toggleBtn = document.getElementById('toggleLoginPassword');
-        const passwordInput = document.getElementById('loginPassword');
-        if (toggleBtn && passwordInput) {
-            toggleBtn.addEventListener('click', () => {
-                const type = passwordInput.type === 'password' ? 'text' : 'password';
-                passwordInput.type = type;
-                toggleBtn.innerHTML = type === 'password' ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+            const close = () => { 
+                if (modal.parentNode) {
+                    modal.parentNode.removeChild(modal);
+                }
+            };
+            
+            const cancelBtn = document.getElementById('cancelLogin');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', close);
+            }
+            
+            modal.addEventListener('click', (e) => { 
+                if (e.target === modal) close(); 
             });
-        }
 
-        const close = () => { if (modal.parentNode) modal.parentNode.removeChild(modal); };
-        document.getElementById('cancelLogin').addEventListener('click', close);
-        modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
-
-        document.getElementById('doLogin').addEventListener('click', async () => {
             const loginBtn = document.getElementById('doLogin');
-            const email = /** @type {HTMLInputElement} */(document.getElementById('loginEmail')).value.trim().toLowerCase();
-            const password = /** @type {HTMLInputElement} */(document.getElementById('loginPassword')).value;
+            if (loginBtn) {
+                loginBtn.addEventListener('click', async () => {
+                    const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+                    const password = document.getElementById('loginPassword').value;
 
-            if (!this.validateEmail(email) || !password) {
-                this.showNotification('Geçerli e-posta ve şifre girin', 'error');
-                return;
+                    if (!this.validateEmail(email) || !password) {
+                        this.showNotification('Geçerli e-posta ve şifre girin', 'error');
+                        return;
+                    }
+
+                    // Yükleme durumu
+                    loginBtn.disabled = true;
+                    loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Giriş yapılıyor...</span>';
+
+                    const users = this.getUsers();
+                    const user = users.find(u => u.email === email);
+
+                    if (!user) {
+                        loginBtn.disabled = false;
+                        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i><span>Giriş Yap</span>';
+                        this.showNotification('Bu e-posta ile kayıtlı kullanıcı bulunamadı', 'error');
+                        return;
+                    }
+
+                    const hash = await this.hashPassword(password);
+                    if (user.passHash !== hash) {
+                        loginBtn.disabled = false;
+                        loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i><span>Giriş Yap</span>';
+                        this.showNotification('Şifre hatalı! Lütfen tekrar deneyin', 'error');
+                        return;
+                    }
+
+                    this.saveCurrentUser(user);
+                    this.showNotification('Hoş geldin, ' + (user.name || 'Kullanıcı') + '! 🎉', 'success');
+                    close();
+                });
             }
 
-            // Yükleme durumu
-            loginBtn.disabled = true;
-            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Giriş yapılıyor...</span>';
-
-            const users = this.getUsers();
-            const user = users.find(u => u.email === email);
-
-            if (!user) {
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i><span>Giriş Yap</span>';
-                this.showNotification('Bu e-posta ile kayıtlı kullanıcı bulunamadı', 'error');
-                return;
+            const forgotBtn = document.getElementById('forgotPassword');
+            if (forgotBtn) {
+                forgotBtn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    close();
+                    this.showResetPasswordDialog();
+                });
             }
 
-            const hash = await this.hashPassword(password);
-            if (user.passHash !== hash) {
-                loginBtn.disabled = false;
-                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i><span>Giriş Yap</span>';
-                this.showNotification('Şifre hatalı! Lütfen tekrar deneyin', 'error');
-                return;
+            const toRegisterBtn = document.getElementById('toRegister');
+            if (toRegisterBtn) {
+                toRegisterBtn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    close();
+                    this.showRegisterDialog();
+                });
             }
 
-            this.saveCurrentUser(user);
-            this.showNotification('Hoş geldin, ' + (user.name || 'Kullanıcı') + '! 🎉', 'success');
-            close();
-        });
-
-        document.getElementById('forgotPassword').addEventListener('click', (ev) => {
-            ev.preventDefault();
-            ev.stopPropagation();
-            close();
-            this.showResetPasswordDialog();
-        });
-
-        const toRegister = document.getElementById('toRegister');
-        if (toRegister) {
-            toRegister.addEventListener('click', (ev) => {
-                ev.preventDefault();
-                ev.stopPropagation();
-                close();
-                this.showRegisterDialog();
+            // Modal giriş yapılmadan kapatılırsa, kapıyı tekrar göster
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal && !this.currentUser) {
+                    if (gate) gate.classList.remove('hidden');
+                }
             });
-        }
-
-        // Modal giriş yapılmadan kapatılırsa, kapıyı tekrar göster
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal && !this.currentUser) {
-                if (gate) gate.classList.remove('hidden');
+            
+            const cancelLoginBtn = document.getElementById('cancelLogin');
+            if (cancelLoginBtn) {
+                cancelLoginBtn.addEventListener('click', () => {
+                    if (!this.currentUser && gate) gate.classList.remove('hidden');
+                });
             }
-        });
-        document.getElementById('cancelLogin').addEventListener('click', () => {
-            if (!this.currentUser && gate) gate.classList.remove('hidden');
-        });
+        }, 100);
     }
 
     showRegisterDialog() {

@@ -9,7 +9,12 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body {
-            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            unicode-bidi: embed;
+            font-variant: normal;
+            text-transform: none;
+            letter-spacing: normal;
+            word-spacing: normal;
         }
         /* Turkish character support */
         .turkish-text {
@@ -17,11 +22,24 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             text-rendering: optimizeLegibility;
+            unicode-bidi: embed;
         }
         /* Fix for Turkish characters */
         * {
             font-variant-ligatures: normal;
             font-feature-settings: "kern" 1, "liga" 1;
+            unicode-bidi: embed;
+        }
+        /* Button text fix */
+        button, .btn {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+            unicode-bidi: embed;
+            font-variant: normal;
+        }
+        /* Modal text fix */
+        .modal-content, .fixed {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+            unicode-bidi: embed;
         }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
