@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akıllı Bütçe Takipçisi</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        /* Turkish character support */
+        .turkish-text {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+        /* Fix for Turkish characters */
+        * {
+            font-variant-ligatures: normal;
+            font-feature-settings: "kern" 1, "liga" 1;
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                screens: {
+                    'xs': '480px',
+                    'sm': '640px',
+                    'md': '768px',
+                    'lg': '1024px',
+                    'xl': '1280px',
+                    '2xl': '1536px',
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        .dark .glass-effect {
+            background: rgba(30, 41, 59, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .transaction-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: left center;
+        }
+
+        .transaction-item:hover {
+            transform: translateX(8px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .slide-up {
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .balance-positive {
+            background: linear-gradient(135deg, #10b981, #059669);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .balance-negative {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .category-badge {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-badge::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .category-badge:hover::before {
+            left: 100%;
+        }
+
+        .category-badge:hover {
+            transform: scale(1.08) translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9;
+            /* default content text white in dark mode */
+        }
+
+        .dark .glass-effect {
+            background: rgba(30, 41, 59, 0.95);
+            color: #f1f5f9;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .text-gray-800 {
+            color: #1f2937 !important;
+        }
+
+        .text-gray-700 {
+            color: #374151 !important;
+        }
+
+        .text-gray-600 {
+            color: #4b5563 !important;
+        }
+
+        .text-gray-500 {
+            color: #6b7280 !important;
+        }
+
+        .text-gray-400 {
+            color: #9ca3af !important;
+        }
+
+        /* Dark mode: make non-header text white for readability */
+
+        .dark .text-gray-800 {
+            color: #f1f5f9 !important;
+        }
+
+        .dark .text-gray-700 {
+            color: #f1f5f9 !important;
+        }
+
+        .dark .text-gray-600 {
+            color: #f1f5f9 !important;
+        }
+
+        .dark .text-gray-500 {
+            color: #e5e7eb !important;
+        }
+
+        .dark .text-gray-400 {
+            color: #cbd5e1 !important;
+        }
+
+        .dark .bg-white {
+            background: rgba(30, 41, 59, 0.95);
+        }
+
+        .dark .bg-gray-50 {
+            background: rgba(51, 65, 85, 0.5);
+        }
+
+        .dark .bg-gray-100 {
+            background: rgba(71, 85, 105, 0.5);
+        }
+
+        .dark .bg-gray-200 {
+            background: rgba(100, 116, 139, 0.3);
+        }
+
+        .dark .bg-gray-300 {
+            background: rgba(100, 116, 139, 0.5);
+        }
+
+        .dark .bg-gray-400 {
+            background: rgba(148, 163, 184, 0.5);
+        }
+
+        .dark .bg-gray-500 {
+            background: rgba(100, 116, 139, 0.8);
+        }
+
+        .dark .bg-gray-600 {
+            background: rgba(71, 85, 105, 0.8);
+        }
+
+        .dark .bg-gray-700 {
+            background: rgba(51, 65, 85, 0.9);
+        }
+
+        .dark .bg-gray-800 {
+            background: rgba(30, 41, 59, 0.95);
+        }
+
+        .dark .border-gray-300 {
+            border-color: rgba(100, 116, 139, 0.5);
+        }
+
+        .dark .border-gray-200 {
+            border-color: rgba(148, 163, 184, 0.3);
+        }
+
+        .dark .border-gray-600 {
+            border-color: rgba(71, 85, 105, 0.8);
+        }
+
+        .dark input,
+        .dark select,
+        .dark textarea {
+            background: rgba(30, 41, 59, 0.8);
+            color: #e2e8f0;
+            border-color: rgba(100, 116, 139, 0.5);
+        }
+
+        .dark input:focus,
+        .dark select:focus,
+        .dark textarea:focus {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .dark .transaction-item {
+            background: rgba(30, 41, 59, 0.9);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dark .transaction-item:hover {
+            background: rgba(30, 41, 59, 1);
+        }
+
+        .dark .hover\:bg-gray-50:hover {
+            background: rgba(51, 65, 85, 0.5) !important;
+        }
+
+        .dark .hover\:bg-gray-200:hover {
+            background: rgba(100, 116, 139, 0.3) !important;
+        }
+
+        .dark .hover\:bg-white:hover {
+            background: rgba(30, 41, 59, 0.95) !important;
+        }
+
+        .dark .bg-red-50 {
+            background: rgba(127, 29, 29, 0.2) !important;
+        }
+
+        .dark .bg-green-50 {
+            background: rgba(20, 83, 45, 0.2) !important;
+        }
+
+        .dark .bg-indigo-50 {
+            background: rgba(49, 46, 129, 0.2) !important;
+        }
+
+        .dark .bg-purple-100 {
+            background: rgba(107, 33, 168, 0.3) !important;
+        }
+
+        .dark .bg-indigo-100 {
+            background: rgba(79, 70, 229, 0.3) !important;
+        }
+
+        .dark .text-red-700 {
+            color: #f87171 !important;
+        }
+
+        .dark .text-green-700 {
+            color: #4ade80 !important;
+        }
+
+        .dark .text-indigo-700 {
+            color: #a5b4fc !important;
+        }
+
+        .dark .text-xl {
+            color: #f1f5f9 !important;
+        }
+
+        .dark .text-4xl {
+            color: #f1f5f9 !important;
+        }
+
+        .dark .font-semibold {
+            color: #f1f5f9 !important;
+        }
+
+        .dark .font-bold {
+            color: #f1f5f9 !important;
+        }
+
+        .dark h1,
+        .dark h2,
+        .dark h3,
+        .dark h4,
+        .dark h5,
+        .dark h6 {
+            color: #f1f5f9 !important;
+        }
+
+        .dark .gradient-text {
+            color: #1f2937 !important;
+        }
+
+        /* Ensure header stays black in dark mode even if utility classes set white */
+
+        .dark header,
+        .dark header h1,
+        .dark header p,
+        .dark header .text-4xl,
+        .dark header .text-xl,
+        .dark header .font-bold,
+        .dark header .font-semibold,
+        .dark header .text-gray-800,
+        .dark header .text-gray-700,
+        .dark header .text-gray-600,
+        .dark header .gradient-text {
+            color: #1f2937 !important;
+        }
+
+        /* Force all non-header content text to white in dark mode */
+
+        .dark .container> :not(header) {
+            color: #f1f5f9 !important;
+        }
+
+        .dark .container> :not(header) *:not([data-keep-color]) {
+            color: #f1f5f9 !important;
+        }
+
+        /* Override Tailwind dark: text utilities to stay white for content */
+
+        .dark .dark\:text-gray-200,
+        .dark .dark\:text-gray-300,
+        .dark .dark\:text-gray-400,
+        .dark .dark\:text-gray-500,
+        .dark .dark\:text-gray-600,
+        .dark .dark\:text-gray-700,
+        .dark .dark\:text-gray-800,
+        .dark .dark\:text-gray-900 {
+            color: #f1f5f9 !important;
+        }
+
+        .progress-ring {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip-content {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .tooltip:hover .tooltip-content {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Professional topbar and unified icon button styling */
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 120;
+        }
+
+        .glass-topbar {
+            background: rgba(255, 255, 255, 0.7);
+            -webkit-backdrop-filter: blur(16px) saturate(1.1);
+            backdrop-filter: blur(16px) saturate(1.1);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .dark .glass-topbar {
+            background: rgba(30, 41, 59, 0.6);
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            min-width: 40px;
+            padding: 0 12px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            border-radius: 12px;
+            transition: all .2s ease;
+        }
+
+        .btn-icon i {
+            font-size: 14px;
+        }
+
+        .btn-icon:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+            background: #fff;
+        }
+
+        .btn-icon:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+        }
+
+        .dark .btn-icon {
+            background: rgba(30, 41, 59, 0.7);
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        .dark .btn-icon:hover {
+            background: rgba(30, 41, 59, 0.9);
+        }
+
+        /* ===== RESPONSIVE DÜZELTMELER ===== */
+        /* Mobil cihazlar (max-width: 480px) */
+
+        @media (max-width: 480px) {
+            .container {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            /* Header responsive */
+            header h1 {
+                font-size: 1.25rem !important;
+            }
+
+            header p {
+                font-size: 0.65rem !important;
+            }
+
+            .glass-topbar {
+                padding: 0.5rem 0.75rem !important;
+            }
+
+            #headerBalanceChip {
+                display: none !important;
+            }
+
+            #headerSearch {
+                display: none !important;
+            }
+
+            .btn-icon {
+                height: 36px;
+                min-width: 36px;
+                padding: 0 8px;
+            }
+
+            .btn-icon i {
+                font-size: 12px;
+            }
+
+            /* Balance Cards */
+            .glass-effect {
+                padding: 1rem !important;
+            }
+
+            .text-3xl {
+                font-size: 1.25rem !important;
+            }
+
+            .text-xl {
+                font-size: 1rem !important;
+            }
+
+            .text-sm {
+                font-size: 0.75rem !important;
+            }
+
+            /* Form elements */
+            input,
+            select,
+            button {
+                font-size: 14px !important;
+            }
+
+            .py-3 {
+                padding-top: 0.625rem !important;
+                padding-bottom: 0.625rem !important;
+            }
+
+            /* Transaction list */
+            #transactionsList {
+                max-height: 300px !important;
+            }
+
+            .transaction-item {
+                padding: 0.75rem !important;
+            }
+
+            /* Charts */
+            #categoryChart,
+            #trendChart {
+                max-height: 200px !important;
+            }
+
+            /* Arama ve filtre alanları stack */
+            .flex.items-center.space-x-2 {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 0.5rem !important;
+            }
+
+            .flex.items-center.space-x-2>* {
+                width: 100% !important;
+            }
+
+            .flex.bg-gray-100.rounded-lg.p-1 {
+                justify-content: center !important;
+            }
+
+            /* Sıralama butonları */
+            .flex.space-x-2 button {
+                font-size: 0.7rem !important;
+                padding: 0.25rem 0.5rem !important;
+            }
+
+            /* Goal ve stat kartları */
+            .grid.grid-cols-2 {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        /* Küçük tablet (481px - 768px) */
+
+        @media (min-width: 481px) and (max-width: 768px) {
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            header h1 {
+                font-size: 1.5rem !important;
+            }
+
+            header p {
+                font-size: 0.75rem !important;
+            }
+
+            .text-3xl {
+                font-size: 1.5rem !important;
+            }
+
+            .text-4xl {
+                font-size: 1.75rem !important;
+            }
+
+            /* Balance cards 2 sütun */
+            .grid.grid-cols-1.md\:grid-cols-4 {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            /* Transaction list arama */
+            #searchInput {
+                width: 100% !important;
+            }
+        }
+
+        /* Tablet (769px - 1024px) */
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .container {
+                max-width: 100%;
+                padding-left: 1.5rem;
+                padding-right: 1.5rem;
+            }
+
+            /* Balance cards 2 sütun */
+            .grid.grid-cols-1.md\:grid-cols-4 {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            .text-4xl {
+                font-size: 2rem !important;
+            }
+        }
+
+        /* Küçük laptop (1025px - 1280px) */
+
+        @media (min-width: 1025px) and (max-width: 1280px) {
+            .container {
+                max-width: 1200px;
+            }
+
+            /* Header butonlarını biraz sıkıştır */
+            .btn-icon {
+                padding: 0 10px;
+            }
+        }
+
+        /* Çok geniş ekranlar (min-width: 1920px) - scaling sorunu çözümü */
+
+        @media (min-width: 1920px) {
+            .container {
+                max-width: 1600px;
+            }
+
+            html {
+                font-size: 18px;
+            }
+        }
+
+        /* Çok küçük ekranlar (fold telefonlar vb.) */
+
+        @media (max-width: 320px) {
+            header h1 {
+                font-size: 1rem !important;
+            }
+
+            .balance-positive,
+            .balance-negative {
+                font-size: 1rem !important;
+            }
+
+            .btn-icon {
+                height: 32px;
+                min-width: 32px;
+                padding: 0 6px;
+            }
+
+            .glass-effect {
+                padding: 0.75rem !important;
+            }
+        }
+
+        /* ===== GENEL LAYOUT DÜZELTMELERİ ===== */
+        /* Esnek grid yapısı - ana içerik */
+
+        .grid.grid-cols-1.lg\:grid-cols-3 {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1023px) {
+            .grid.grid-cols-1.lg\:grid-cols-3 {
+                grid-template-columns: 1fr !important;
+            }
+
+            .lg\:col-span-1,
+            .lg\:col-span-2 {
+                grid-column: span 1 !important;
+            }
+        }
+
+        /* Header flex wrap düzeltmesi */
+
+        .flex.flex-wrap.md\:flex-nowrap {
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 768px) {
+            .flex.flex-wrap.md\:flex-nowrap {
+                justify-content: center !important;
+                gap: 0.75rem !important;
+            }
+
+            .flex.flex-wrap.md\:flex-nowrap>div:first-child {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .flex.flex-wrap.md\:flex-nowrap>div:last-child {
+                justify-content: center !important;
+                flex-wrap: wrap;
+            }
+        }
+
+        /* Overflow prevention */
+
+        * {
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+
+        img,
+        video,
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Text overflow handling */
+
+        h1,
+        h2,
+        h3,
+        p,
+        span {
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+
+        /* Button text responsive */
+
+        button {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Transaction item responsive */
+
+        .transaction-item {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 640px) {
+            .transaction-item>div {
+                flex: 1 1 100%;
+            }
+
+            .transaction-item>div:last-child {
+                flex: 0 0 auto;
+            }
+
+            * {
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+</head>
+<body class="turkish-text">
+    <div class="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+        <!-- Header -->
+        <header class="glass-effect sticky top-0 z-40 border-b border-white/20 dark:border-gray-700/50">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16 lg:h-20">
+                    <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink-0">
+                        <div
+                            class="bg-white/80 dark:bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl p-2 sm:p-3 shadow flex-shrink-0">
+                            <i class="fas fa-wallet text-lg sm:text-2xl gradient-text"></i>
+                        </div>
+                        <div class="text-left min-w-0">
+                            <h1 class="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-800 truncate">
+                                Akıllı Bütçe</h1>
+                            <p class="text-gray-600 text-xs sm:text-sm hidden xs:block">Profesyonel Finans Yönetimi</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1 sm:gap-2 flex-1 justify-end flex-wrap">
+                        <div id="headerBalanceChip"
+                            class="hidden sm:inline-flex items-center gap-2 px-2.5 py-1.5 rounded-full border text-sm font-semibold border-gray-300 text-gray-700 dark:text-gray-200 dark:border-gray-600">
+                            <i id="headerBalanceIcon" class="fas fa-balance-scale"></i>
+                            <span id="headerNetBalance">₺0.00</span>
+                        </div>
+                        <div class="relative hidden md:block">
+                            <input id="headerSearch" type="text" placeholder="Ara..."
+                                class="px-3 pl-8 pr-3 h-10 rounded-xl border bg-white/80 dark:bg-gray-700 dark:border-gray-600 text-sm focus:ring-2 focus:ring-indigo-500">
+                            <i
+                                class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        </div>
+                        <button id="quickNewBtn"
+                            onclick="document.getElementById('description') && document.getElementById('description').focus()"
+                            class="tooltip btn-icon">
+                            <i class="fas fa-plus" style="color: var(--accent)"></i>
+                            <span class="tooltip-content">Hızlı Yeni İşlem</span>
+                        </button>
+                        <button id="exportBtn" class="tooltip btn-icon hidden md:inline-flex">
+                            <i class="fas fa-download text-gray-700 text-sm"></i>
+                            <span class="tooltip-content">Verileri Dışa Aktar</span>
+                        </button>
+                        <button id="importBtn" class="tooltip btn-icon hidden md:inline-flex">
+                            <i class="fas fa-upload text-gray-700 text-sm"></i>
+                            <span class="tooltip-content">Verileri İçe Aktar</span>
+                        </button>
+                        <button id="exportCsvBtn" class="tooltip btn-icon hidden md:inline-flex">
+                            <i class="fas fa-file-csv text-gray-700 text-sm"></i>
+                            <span class="tooltip-content">CSV Dışa Aktar</span>
+                        </button>
+                        <button id="importCsvBtn" class="tooltip btn-icon hidden md:inline-flex">
+                            <i class="fas fa-file-import text-gray-700 text-sm"></i>
+                            <span class="tooltip-content">CSV İçe Aktar</span>
+                        </button>
+                        <button id="resetDataBtn" class="tooltip btn-icon hidden md:inline-flex">
+                            <i class="fas fa-trash text-gray-700 text-sm"></i>
+                            <span class="tooltip-content">Tüm Verileri Sıfırla</span>
+                        </button>
+                        <button id="printBtn" class="tooltip btn-icon hidden md:inline-flex">
+                            <i class="fas fa-print text-gray-700 text-sm"></i>
+                            <span class="tooltip-content">Rapor Yazdır (PDF)</span>
+                        </button>
+                        <button id="settingsBtn" class="tooltip btn-icon hidden md:inline-flex">
+                            <i class="fas fa-cog text-gray-700 text-sm"></i>
+                            <span class="tooltip-content">Ayarlar</span>
+                        </button>
+                        <button id="loginBtn" onclick="window.budgetTracker && budgetTracker.showLoginDialog()"
+                            class="tooltip btn-icon hidden md:inline-flex">
+                            <i class="fas fa-sign-in-alt text-gray-700 text-sm"></i>
+                            <span class="tooltip-content">Giriş Yap</span>
+                        </button>
+                        <button id="registerBtn" onclick="window.budgetTracker && budgetTracker.showRegisterDialog()"
+                            class="tooltip btn-icon hidden md:inline-flex">
+                            <i class="fas fa-user-plus text-gray-700 text-sm"></i>
+                            <span class="tooltip-content">Kayıt Ol</span>
+                        </button>
+                        <div id="accountDropdown" class="relative hidden">
+                            <button id="accountBtn"
+                                class="tooltip btn-icon flex items-center gap-2 hidden md:inline-flex">
+                                <i class="fas fa-user-circle text-gray-700 text-sm"></i>
+                                <span class="tooltip-content">Hesabım</span>
+                            </button>
+                            <div id="accountMenu"
+                                class="absolute right-0 mt-2 w-64 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 hidden overflow-hidden z-[200]">
+                                <!-- Kullanıcı bilgileri header -->
+                                <div class="bg-gradient-to-r from-indigo-500 to-purple-600 px-4 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-user text-white text-lg"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div id="accountName" class="text-sm font-semibold text-white truncate">-
+                                            </div>
+                                            <div id="accountEmail" class="text-xs text-white/80 truncate">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Menü öğeleri -->
+                                <div class="p-2">
+                                    <button id="profileBtn"
+                                        class="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 group">
+                                        <div
+                                            class="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800/50 transition-colors">
+                                            <i class="fas fa-user text-indigo-600 dark:text-indigo-400 text-xs"></i>
+                                        </div>
+                                        <span>Profil Bilgileri</span>
+                                    </button>
+                                    <button id="changePasswordBtn"
+                                        class="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-amber-50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 group">
+                                        <div
+                                            class="w-8 h-8 bg-amber-100 dark:bg-amber-900/30 rounded-lg flex items-center justify-center group-hover:bg-amber-200 dark:group-hover:bg-amber-800/50 transition-colors">
+                                            <i class="fas fa-key text-amber-600 dark:text-amber-400 text-xs"></i>
+                                        </div>
+                                        <span>Şifre Değiştir</span>
+                                    </button>
+                                    <button id="verifyEmailBtn"
+                                        class="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-700 rounded-xl transition-all duration-200 group">
+                                        <div
+                                            class="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center group-hover:bg-green-200 dark:group-hover:bg-green-800/50 transition-colors">
+                                            <i
+                                                class="fas fa-envelope-check text-green-600 dark:text-green-400 text-xs"></i>
+                                        </div>
+                                        <span>E-posta Doğrula</span>
+                                    </button>
+                                </div>
+                                <!-- Divider -->
+                                <div class="mx-3 border-t border-gray-200 dark:border-gray-700"></div>
+                                <!-- Çıkış butonu -->
+                                <div class="p-2">
+                                    <button id="logoutBtn"
+                                        class="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all duration-200 group">
+                                        <div
+                                            class="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center group-hover:bg-red-200 dark:group-hover:bg-red-800/50 transition-colors">
+                                            <i class="fas fa-sign-out-alt text-red-600 dark:text-red-400 text-xs"></i>
+                                        </div>
+                                        <span>Çıkış Yap</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button id="darkModeToggle" class="tooltip btn-icon">
+                            <i class="fas fa-moon text-gray-700 text-sm"></i>
+                            <span class="tooltip-content">Karanlık Mod</span>
+                        </button>
+                        <div class="relative md:hidden">
+                            <button id="moreMenuBtn" class="tooltip btn-icon"><i
+                                    class="fas fa-ellipsis-h text-gray-700 text-sm"></i><span
+                                    class="tooltip-content">Daha Fazla</span></button>
+                            <div id="moreMenu"
+                                class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 p-2">
+                                <div class="grid gap-1">
+                                    <button id="mmExport"
+                                        class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">Verileri
+                                        Dışa Aktar</button>
+                                    <button id="mmImport"
+                                        class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">Verileri
+                                        İçe Aktar</button>
+                                    <button id="mmExportCsv"
+                                        class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">CSV
+                                        Dışa Aktar</button>
+                                    <button id="mmImportCsv"
+                                        class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">CSV
+                                        İçe Aktar</button>
+                                    <button id="mmPrint"
+                                        class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">Rapor
+                                        Yazdır (PDF)</button>
+                                    <button id="mmSettings"
+                                        class="w-full text-left px-3 py-2 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">Ayarlar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </header>
+
+        <!-- Balance Cards -->
+        <div class="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 mb-6 md:mb-8">
+            <div class="glass-effect rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl fade-in hover-lift">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Toplam Gelir</p>
+                        <p id="totalIncome" class="text-2xl sm:text-3xl font-bold balance-positive">₺0.00</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-400 to-green-600 p-3 rounded-2xl shadow-lg">
+                        <i class="fas fa-arrow-trend-up text-white text-lg"></i>
+                    </div>
+                </div>
+                <div class="flex items-center text-sm text-gray-500">
+                    <i class="fas fa-calendar-alt mr-2"></i>
+                    <span id="incomePeriod">Bu ay</span>
+                </div>
+            </div>
+
+            <div class="glass-effect rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl fade-in hover-lift">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Toplam Gider</p>
+                        <p id="totalExpense" class="text-2xl sm:text-3xl font-bold balance-negative">₺0.00</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-red-400 to-red-600 p-3 rounded-2xl shadow-lg">
+                        <i class="fas fa-arrow-trend-down text-white text-lg"></i>
+                    </div>
+                </div>
+                <div class="flex items-center text-sm text-gray-500">
+                    <i class="fas fa-calendar-alt mr-2"></i>
+                    <span id="expensePeriod">Bu ay</span>
+                </div>
+            </div>
+
+            <div class="glass-effect rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl fade-in hover-lift">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Net Bakiye</p>
+                        <p id="netBalance" class="text-2xl sm:text-3xl font-bold text-indigo-600">₺0.00</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-indigo-400 to-purple-600 p-3 rounded-2xl shadow-lg">
+                        <i class="fas fa-balance-scale text-white text-lg"></i>
+                    </div>
+                </div>
+                <div class="flex items-center text-sm text-gray-500">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    <span id="balanceTrend">+0%</span>
+                </div>
+            </div>
+
+            <div class="glass-effect rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl fade-in hover-lift">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-sm text-gray-600 mb-1">Bütçe Durumu</p>
+                        <p id="budgetStatus" class="text-xl font-bold text-gray-800">İyi</p>
+                    </div>
+                    <div class="relative">
+                        <svg class="w-14 h-14">
+                            <circle cx="28" cy="28" r="24" stroke="#e5e7eb" stroke-width="3" fill="none"></circle>
+                            <circle id="budgetProgress" cx="28" cy="28" r="24" stroke="#10b981" stroke-width="3"
+                                fill="none" stroke-dasharray="151" stroke-dashoffset="151"
+                                class="progress-ring transition-all duration-500"></circle>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <i id="budgetIcon" class="fas fa-piggy-bank text-sm text-gray-600"></i>
+                        </div>
+                        <div class="absolute -bottom-1 -right-1">
+                            <span id="budgetPercent"
+                                class="text-xs font-bold bg-white dark:bg-gray-800 px-1.5 py-0.5 rounded-full shadow-sm">0%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center text-sm text-gray-500">
+                    <i class="fas fa-piggy-bank mr-2"></i>
+                    <span id="budgetInfo">Aylık hedef</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            <!-- Transaction Form -->
+            <div class="lg:col-span-1">
+                <div class="glass-effect rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
+                            <i class="fas fa-plus-circle text-indigo-600 mr-2 text-lg"></i> Yeni İşlem
+                        </h2>
+                        <button id="recurringBtn"
+                            class="tooltip px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200 transition-colors">
+                            <i class="fas fa-sync-alt mr-1 text-xs"></i>Tekrarlayan
+                            <span class="tooltip-content">Tekrarlayan İşlem Ekle</span>
+                        </button>
+                    </div>
+                    <form id="transactionForm">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">İşlem Tipi</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="button" id="incomeBtn"
+                                    class="py-3 px-4 rounded-xl border-2 border-gray-300 text-gray-700 hover:border-green-500 hover:bg-green-50 transition-all duration-300 font-medium">
+                                    <i class="fas fa-arrow-up mr-2 text-base"></i> Gelir
+                                </button>
+                                <button type="button" id="expenseBtn"
+                                    class="py-3 px-4 rounded-xl border-2 border-gray-300 text-gray-700 hover:border-red-500 hover:bg-red-50 transition-all duration-300 font-medium">
+                                    <i class="fas fa-arrow-down mr-2 text-base"></i> Gider
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="description"
+                                class="block text-sm font-medium text-gray-700 mb-2">Açıklama</label>
+                            <div class="relative">
+                                <input type="text" id="description" required
+                                    class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                    placeholder="Örn: Maaş, Market Alışverişi">
+                                <i class="fas fa-edit absolute left-3 top-3.5 text-gray-400 text-sm"></i>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">Tutar</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-3.5 text-gray-500 font-medium">₺</span>
+                                <input type="number" id="amount" required step="0.01" min="0"
+                                    class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                                    placeholder="0.00">
+                                <button type="button" id="quickAmountBtn"
+                                    class="absolute right-2 top-2 px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs hover:bg-gray-200">
+                                    <i class="fas fa-calculator text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="category" class="block text-sm font-medium text-gray-700 mb-2">Kategori</label>
+                            <div class="relative">
+                                <select id="category" required
+                                    class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all appearance-none">
+                                    <option value="">Kategori Seçin</option>
+                                </select>
+                                <i class="fas fa-tag absolute left-3 top-3.5 text-gray-400 text-sm"></i>
+                                <i class="fas fa-chevron-down absolute right-3 top-3.5 text-gray-400 text-sm"></i>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div>
+                                <label for="date" class="block text-sm font-medium text-gray-700 mb-2">Tarih</label>
+                                <div class="relative">
+                                    <input type="date" id="date" required
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm">
+                                    <i class="fas fa-calendar absolute right-3 top-2.5 text-gray-400 text-sm"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="tags" class="block text-sm font-medium text-gray-700 mb-2">Etiketler</label>
+                                <div class="relative">
+                                    <input type="text" id="tags"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-sm"
+                                        placeholder="Örn: Önemli">
+                                    <i class="fas fa-hashtag absolute right-3 top-2.5 text-gray-400 text-sm"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit"
+                            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+                            <i class="fas fa-save mr-2 text-base"></i>İşlemi Kaydet
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Chart -->
+                <div class="glass-effect rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl fade-in mt-4 sm:mt-6">
+                    <div
+                        class="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-2 mb-3 sm:mb-4">
+                        <h2 class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200">
+                            <i class="fas fa-chart-pie text-indigo-600 mr-2 text-base sm:text-lg"></i> Kategori Analizi
+                        </h2>
+                        <select id="chartPeriod"
+                            class="px-2 sm:px-3 py-1 border border-gray-300 rounded-lg text-xs sm:text-sm">
+                            <option value="month">Bu Ay</option>
+                            <option value="quarter">Bu Çeyrek</option>
+                            <option value="year">Bu Yıl</option>
+                        </select>
+                    </div>
+                    <div class="relative h-48 sm:h-64 md:h-72">
+                        <canvas id="categoryChart" style="max-height: 100%; max-width: 100%;"></canvas>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-2">
+                        <div class="bg-indigo-50 dark:bg-indigo-50 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600 dark:text-gray-600">En Yüksek Kategori</p>
+                            <p id="topCategory" class="font-semibold text-indigo-700 dark:text-indigo-700">-</p>
+                        </div>
+                        <div class="bg-red-50 dark:bg-red-50 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600 dark:text-gray-600">Ortalama Harcama</p>
+                            <p id="avgExpense" class="font-semibold text-red-700 dark:text-red-700">₺0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="glass-effect rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl fade-in mt-4 sm:mt-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4">
+                        <i class="fas fa-tachometer-alt text-indigo-600 mr-2 text-base sm:text-lg"></i> Hızlı
+                        İstatistikler
+                    </h2>
+                    <div class="grid grid-cols-2 gap-2 sm:gap-4">
+                        <div class="bg-blue-50 dark:bg-blue-50 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600 dark:text-gray-600">Bugünkü Harcama</p>
+                            <p id="todayExpense" class="font-semibold text-blue-700 dark:text-blue-700">₺0</p>
+                        </div>
+                        <div class="bg-purple-50 dark:bg-purple-50 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600 dark:text-gray-600">Haftalık Ortalama</p>
+                            <p id="weeklyAvg" class="font-semibold text-purple-700 dark:text-purple-700">₺0</p>
+                        </div>
+                        <div class="bg-orange-50 dark:bg-orange-50 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600 dark:text-gray-600">En Büyük Harcama</p>
+                            <p id="largestExpense" class="font-semibold text-orange-700 dark:text-orange-700">₺0</p>
+                        </div>
+                        <div class="bg-teal-50 dark:bg-teal-50 p-3 rounded-lg">
+                            <p class="text-sm text-gray-600 dark:text-gray-600">İşlem Sayısı</p>
+                            <p id="quickTransactionCount" class="font-semibold text-teal-700 dark:text-teal-700">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Budget Goals -->
+                <div class="glass-effect rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl fade-in mt-4 sm:mt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200">
+                            <i class="fas fa-bullseye text-indigo-600 mr-2 text-lg"></i> Bütçe Hedefleri
+                        </h2>
+                        <button id="addGoalBtn"
+                            class="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-sm hover:bg-indigo-200">
+                            <i class="fas fa-plus mr-1 text-xs"></i>Hedef Ekle
+                        </button>
+                    </div>
+                    <div id="goalsList" class="space-y-3">
+                        <!-- Goals will be added here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions List -->
+            <div class="lg:col-span-2">
+                <div class="glass-effect rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl fade-in">
+                    <div
+                        class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+                        <h2 class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200">
+                            <i class="fas fa-list text-indigo-600 mr-2 text-base sm:text-lg"></i> İşlem Geçmişi
+                        </h2>
+                        <div class="flex flex-col xs:flex-row items-stretch xs:items-center gap-2 w-full sm:w-auto">
+                            <div class="relative flex-1 sm:flex-initial">
+                                <input type="text" id="searchInput" placeholder="Ara..."
+                                    class="w-full sm:w-auto pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-sm"></i>
+                            </div>
+                            <div class="flex bg-gray-100 rounded-lg p-1 justify-center flex-shrink-0">
+                                <button id="filterAll"
+                                    class="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md bg-white text-gray-800 shadow-sm">
+                                    Tümü
+                                </button>
+                                <button id="filterIncome"
+                                    class="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md text-gray-600 hover:bg-white">
+                                    Gelir
+                                </button>
+                                <button id="filterExpense"
+                                    class="px-2 sm:px-3 py-1 text-xs sm:text-sm rounded-md text-gray-600 hover:bg-white">
+                                    Gider
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="mb-3 sm:mb-4 flex flex-col xs:flex-row justify-between items-start xs:items-center gap-2">
+                        <div class="text-xs sm:text-sm text-gray-600">
+                            <span id="transactionCount">0</span> işlem gösteriliyor
+                        </div>
+                        <div class="flex space-x-1 sm:space-x-2">
+                            <button id="sortByDate"
+                                class="px-2 sm:px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs sm:text-sm hover:bg-gray-200">
+                                <i class="fas fa-sort-amount-down mr-1 text-xs"></i><span
+                                    class="hidden xs:inline">Tarih</span>
+                            </button>
+                            <button id="sortByAmount"
+                                class="px-2 sm:px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs sm:text-sm hover:bg-gray-200">
+                                <i class="fas fa-sort-numeric-down mr-1 text-xs"></i><span
+                                    class="hidden xs:inline">Tutar</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="transactionsList" class="space-y-3 max-h-96 overflow-y-auto">
+                        <!-- Transactions will be added here dynamically -->
+                    </div>
+
+                    <div id="emptyState" class="text-center py-12">
+                        <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
+                        <p class="text-gray-500 font-medium">Henüz hiç işlem kaydedilmemiş</p>
+                        <p class="text-gray-400 text-sm mt-2">İlk işleminizi eklemek için formu kullanın</p>
+                    </div>
+                </div>
+
+                <!-- Monthly Trends -->
+                <div class="glass-effect rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xl fade-in mt-4 sm:mt-6">
+                    <h2 class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200 mb-3 sm:mb-4">
+                        <i class="fas fa-chart-line text-indigo-600 mr-2 text-base sm:text-lg"></i> Aylık Trend
+                    </h2>
+                    <div class="relative h-40 sm:h-52 md:h-60">
+                        <canvas id="trendChart" style="max-height: 100%; max-width: 100%;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Gate Overlay -->
+    <div id="authGate"
+        class="fixed inset-0 bg-gradient-to-br from-indigo-900/70 to-purple-900/70 backdrop-blur-sm flex items-center justify-center z-[100] hidden">
+        <div
+            class="glass-effect rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl max-w-md w-full mx-3 sm:mx-4 text-center">
+            <div class="flex items-center justify-center mb-3 sm:mb-4">
+                <div class="bg-white/80 rounded-xl sm:rounded-2xl p-2 sm:p-3 shadow">
+                    <i class="fas fa-wallet text-xl sm:text-2xl gradient-text"></i>
+                </div>
+            </div>
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">Akıllı Bütçe</h2>
+            <p class="text-sm sm:text-base text-gray-600 dark:text-gray-300 mb-4 sm:mb-6">Devam etmek için giriş yapın
+                veya kayıt olun</p>
+            <div class="grid grid-cols-2 gap-2 sm:gap-3">
+                <button id="loginGateBtn" onclick="window.budgetTracker && budgetTracker.showLoginDialog()"
+                    class="py-3 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors">Giriş
+                    Yap</button>
+                <button id="registerGateBtn" onclick="window.budgetTracker && budgetTracker.showRegisterDialog()"
+                    class="py-3 rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Kayıt
+                    Ol</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+</body>
+
+</html>
